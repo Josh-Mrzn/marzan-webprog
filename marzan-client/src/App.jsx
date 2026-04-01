@@ -1,23 +1,39 @@
-import React from 'react'
-import './App.css'
- 
+import { createBrwserRouter, RouterProvider} from 'react-router-dom'
+
+// HomePage Structure
+import Layout from './components/Layout';
+import ArticlePage from './pages/ArticlePage';
+import HomePage from './pages/HomePage';
+import AboutPage from './pages/AboutPage';
+
+const routes = [
+  {
+    path: '/',
+    element: <Layout />,
+    children: [
+      {
+        path: '',
+        element: <HomePage />,
+      },
+      {
+        path: 'about',
+        element: <AboutPage />,
+      },
+      {
+        path: 'article',
+        element: <ArticlePage />,
+      },
+      ],
+    },
+];
+
+const router = createBrwserRouter(routes);
+
 function App() {
   return (
-    <div className="App">
-      <h1>Welcome to My React App!</h1>
-      <p>
-        Name: Joshua Marzann<br />
-        Email: marzanjoshua@gm<br />
-        Course: BS in Information Technology with Specialization in Mobile and Web Application<br />
-        Year and Section: 3rd Year INF-233<br />
-        Github link: <a href="https://github.com/Josh-Mrzn/marzan-webprog" target="_blank" rel="noopener noreferrer">
-        https://github.com/Josh-Mrzn/marzan-webprog
-        </a>
-      </p>
-    </div>
+    <RouterProvider router={router} />
   );
 }
- 
-export default App
- 
- 
+
+export default App;
+
