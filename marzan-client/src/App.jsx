@@ -1,4 +1,4 @@
-import { createBrwserRouter, RouterProvider} from 'react-router-dom'
+import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 
 // HomePage Structure
 import Layout from './components/Layout';
@@ -20,20 +20,21 @@ const routes = [
         element: <AboutPage />,
       },
       {
-        path: 'article',
+        path: 'articles',
         element: <ArticlePage />,
       },
-      ],
-    },
+    ],
+  },
 ];
 
-const router = createBrwserRouter(routes);
+const router = createBrowserRouter(routes);
 
 function App() {
   return (
-    <RouterProvider router={router} />
+    <>
+      <RouterProvider router={router} />
+    </>
   );
 }
 
 export default App;
-
