@@ -37,17 +37,17 @@ const ArticlePage = () => {
 
   return (
     <div className="flex w-full flex-col gap-6">
-      <section className="border-y-2 border-zinc-900 bg-zinc-50 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+      <section className="border-y-2 border-zinc-900 bg-zinc-50 px-4 py-6 sm:px-6 sm:py-8 lg:px-8 text-center">
         <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-zinc-500">
           Articles
         </p>
-        <h1 className="max-w-xl text-3xl font-bold leading-tight text-zinc-900 sm:text-4xl">
+        <h1 className="mx-auto max-w-xl text-3xl font-bold leading-tight text-zinc-900 sm:text-4xl">
          A PetAdoptHub is a website for Dog And Cat lovers who willing to Adopt and care a rescue pets .
         </h1>
-        <p className="mt-4 max-w-lg text-sm leading-7 text-zinc-600 sm:text-base">
+        <p className="mx-auto mt-4 max-w-lg text-sm leading-7 text-zinc-600 sm:text-base">
         We aim to promote responsible pet ownership by providing reliable information, clear adoption processes, and guidance to ensure every pet finds the right match. Beyond adoption, PwrAdoption also raises awareness about animal welfare, encouraging people to choose adoption over buying. By using technology to bridge the gap between pets and people, PwrAdoption strives to create a community where every animal is given the love, care, and forever home they truly deserve.”
         </p>
-        <div className="mt-6">
+        <div className="mt-6 flex justify-center">
           <Button to="/">Back Home</Button>
         </div>
       </section>
