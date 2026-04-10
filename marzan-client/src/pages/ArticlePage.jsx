@@ -1,92 +1,70 @@
+import React from 'react';
+import { useParams, Link } from 'react-router-dom';
 import Button from '../components/Button';
-
-import image4 from '../assets/images/image4.png';
-import image1 from '../assets/images/image1.png';
-import image2 from '../assets/images/image2.png';
-import image3 from '../assets/images/image3.png';
-import image11 from '../assets/images/image11.png';
+import articles from '../assets/article-content.js';
+import NotFoundPage from './NotFoundPage';
 
 const ArticlePage = () => {
- 
-  const articles = [
-    {
-      image: image11,
-      category: "Article #01",
-       title: "Find Your Perfect Pet",
-      description: "Browse a variety of adorable pets looking for a loving home. Easily search and discover animals that match your lifestyle and preferences."
-    },
-    {
-      image: image1,
-      category: "Article #02",
-      title: "Adoption Process",
-      description: "Learn how to adopt a pet بسهولة and responsibly. Our step-by-step guide ensures a smooth and safe adoption experience for everyone.."
-    },
-    {
-      image: image2,
-      category: "Article #03",
-      title: "Pet Care Tips",
-      description: "Get helpful tips on feeding, grooming, and caring for your pets. Ensure your new companion lives a happy and healthy life."
-    },
-    {
-      image: image3,
-      category: "Article #04",
-      title: "Success Stories",
-      description: "Read heartwarming stories of rescued pets who found their forever homes. Be inspired and see the impact of adoption."
-    }
-  ];
+    const { name } = useParams();
+    const article = articles.find(article => article.name === name);
 
-  return (
-    <div className="flex w-full flex-col gap-6">
-      <section className="border-y-2 border-zinc-900 bg-zinc-50 px-4 py-6 sm:px-6 sm:py-8 lg:px-8 text-center">
-        <p className="mb-3 text-[11px] font-semibold uppercase tracking-[0.28em] text-zinc-500">
-          Articles
-        </p>
-        <h1 className="mx-auto max-w-xl text-3xl font-bold leading-tight text-zinc-900 sm:text-4xl">
-         A PetAdoptHub is a website for Dog And Cat lovers who willing to Adopt and care a rescue pets .
-        </h1>
-        <p className="mx-auto mt-4 max-w-lg text-sm leading-7 text-zinc-600 sm:text-base">
-        We aim to promote responsible pet ownership by providing reliable information, clear adoption processes, and guidance to ensure every pet finds the right match. Beyond adoption, PwrAdoption also raises awareness about animal welfare, encouraging people to choose adoption over buying. By using technology to bridge the gap between pets and people, PwrAdoption strives to create a community where every animal is given the love, care, and forever home they truly deserve.”
-        </p>
-        <div className="mt-6 flex justify-center">
-          <Button to="/">Back Home</Button>
-        </div>
-      </section>
+    if (!article) return <NotFoundPage />;
 
-      <section className="border-y-2 border-zinc-900 bg-zinc-50 px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
-        <div className="mb-6">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-zinc-500">
-            Featured Articles
-          </p>
-          <h2 className="mt-2 text-2xl font-semibold text-zinc-900">Article card grid</h2>
-        </div>
+    return (
+        <div className="mx-auto max-w-5xl px-6 py-12 lg:py-20">
+            <div className="mb-10 flex flex-col gap-4 border-b border-zinc-200 pb-6 md:flex-row md:items-end md:justify-between">
+                <Link 
+                    to="/articles" 
+                    className="group inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.3em] text-zinc-500 transition hover:text-zinc-900"
+                >
+                    <span className="transition-transform group-hover:-translate-x-1">←</span>
+                    Back to Articles
+                </Link>
+                <div className="space-y-1 text-right">
+                    <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Adoption Guide</p>
+                    <p className="text-sm text-zinc-500">5 min read · Pet adoption tips</p>
+                </div>
+            </div>
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {articles.map((article, index) => (
-            <article 
-              key={index} 
-              className="rounded-3xl border-2 border-zinc-900 bg-zinc-100 p-4"
-            >
-              <div className="flex aspect-4/3 items-center justify-center rounded-[1.25rem] bg-zinc-200 overflow-hidden">
-                <img
-                  src={article.image}
-                  alt={article.title}
-                  className="h-full w-full object-cover"
+            <div className="mb-12 overflow-hidden rounded-[2rem] border border-zinc-200 shadow-[0_20px_60px_-30px_rgba(24,24,27,0.45)]">
+                <img 
+                    src={article.imageUrl} 
+                    alt={article.title} 
+                    className="aspect-video w-full object-cover"
                 />
-              </div>
-              <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-zinc-500">
-                {article.category}
-              </p>
-              <h3 className="mt-2 text-lg font-semibold text-zinc-900">{article.title}</h3>
-              <p className="mt-3 text-sm leading-6 text-zinc-600">
-                {article.description}
-              </p>
-              <Button className="mt-4">Read More</Button>
+            </div>
+
+            <article className="space-y-12">
+                <div className="space-y-6">
+                    <span className="inline-flex rounded-full bg-zinc-100 px-4 py-1 text-xs uppercase tracking-[0.32em] text-zinc-500">
+                        Pet Adoption Advice
+                    </span>
+                    <h1 className="text-4xl font-black tracking-tight text-zinc-900 sm:text-5xl">
+                        {article.title}
+                    </h1>
+                </div>
+
+                <div className="space-y-8 text-zinc-600">
+                    {article.content.map((paragraph, i) => (
+                        <p key={i} className="text-lg leading-8">
+                            {paragraph}
+                        </p>
+                    ))}
+                </div>
             </article>
-          ))}
+
+            <div className="mt-20 rounded-[2rem] border border-zinc-200 bg-zinc-50 p-10 text-center">
+                <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">Need extra support?</p>
+                <h3 className="mt-3 text-2xl font-semibold text-zinc-900">Create a welcoming home for your new companion.</h3>
+                <p className="mx-auto mt-4 max-w-2xl text-base leading-7 text-zinc-600">
+                    Explore practical checklists, adoption readiness tips, and pet care resources designed for families welcoming a rescue dog or cat.
+                </p>
+                <div className="mt-8 flex justify-center">
+                    <Button to="/articles">View all articles</Button>
+                </div>
+            </div>
         </div>
-      </section>
-    </div>
-  );
+    );
 };
 
 export default ArticlePage;
