@@ -5,31 +5,33 @@ import image1 from '../assets/images/image1.png';
 import image2 from '../assets/images/image2.png';
 import image3 from '../assets/images/image3.png';
 import image4 from '../assets/images/image4.png';
-
+import image7 from '../assets/images/image7.png';
+import image9 from '../assets/images/image9.png';
+import image10 from '../assets/images/image10.png';
 const AboutPage = () => {
-  const visualImages = [image1, image2, image3, image4];
+  const visualImages = [image7, image9, image10, image4];
 
   const featureCards = [
     {
       image: image1,
-      title: "Appointment Scheduler",
-      description: "Effortlessly manage client bookings with a scheduling system that keeps your calendar organized and your operations running smoothly."
+      title: "VISSION",
+      description: "A society where the safe and compassionate co-existence of humans, cats and dogs thrives."
     },
     {
       image: image2,
-      title: "Recruitment Portal",
-      description: "Streamline hiring with a recruitment system that centralizes application, candidate profiles, and evaluation tools."
+      title: "MISSION",
+      description: "To foster a safe community for humans by advocating and raising public awareness on the need for accessible sterilization, veterinary care, rehabilitation and rehoming services for stray cats and dogs."
     },
     {
       image: image3,
-      title: "Inventory Management",
-      description: "Track stock levels in real time with a smart inventory system that helps maintain accuracy and avoid shortages."
+      title: "GOALS",
+      description: "-To promote Catch-Neuter-Vaccinate-Return in barangays, villages and commercial establishments."
     },
 
     {
       image: image4,
-      title: "Task Management",
-      description: "Organize workflows with a task system designed to simplify planning, assignment, and progress tracking."
+      title: "IMPORTANT NOTE:",
+      description: "As we operate with limited funds and rely on volunteer availability, our capacity to fulfill requests depends on our resources and your willingness to participate. We receive numerous rescue requests weekly, and while we strive to help, we simply cannot assist every animal in need. We ask for your respect and understanding as we are volunteers.."
     }
   ];
 
@@ -53,10 +55,10 @@ const AboutPage = () => {
               About Section
             </p>
             <h1 className="max-w-xl text-3xl font-bold leading-tight text-zinc-900 sm:text-4xl">
-              A profile wireframe focused on layout, spacing, and content grouping.
+              A PetAdoptHub is a website for Dog And Cat lovers who willing to Adopt and care a rescue pets .
             </h1>
             <p className="mt-4 max-w-lg text-sm leading-7 text-zinc-600 sm:text-base">
-              This page follows the same low-fidelity system as the homepage with a simple hero, overview blocks, and supporting sections for profile details.
+              PetAdoptHub was formed in the year 2025 by a dedicated group of animal lovers determined to help the plight of animals in the Philippines. We are a non-profit, non-government organization that receives no government funding; we rely solely on private donations.
             </p>
             <div className="mt-6 flex flex-wrap gap-3">
               <Button to="/" variant="primary">

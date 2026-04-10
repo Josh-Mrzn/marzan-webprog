@@ -4,33 +4,34 @@ import image4 from '../assets/images/image4.png';
 import image1 from '../assets/images/image1.png';
 import image2 from '../assets/images/image2.png';
 import image3 from '../assets/images/image3.png';
+import image11 from '../assets/images/image11.png';
 
 const ArticlePage = () => {
  
   const articles = [
     {
-      image: image4,
+      image: image11,
       category: "Article #01",
-       title: "Task Management",
-      description: "Organize workflows with a task system designed to simplify planning, assignment, and progress tracking."
+       title: "Find Your Perfect Pet",
+      description: "Browse a variety of adorable pets looking for a loving home. Easily search and discover animals that match your lifestyle and preferences."
     },
     {
       image: image1,
       category: "Article #02",
-      title: "Recruitment Portal",
-      description: "Streamline hiring with a recruitment system that centralizes application, candidate profiles, and evaluation tools."
+      title: "Adoption Process",
+      description: "Learn how to adopt a pet بسهولة and responsibly. Our step-by-step guide ensures a smooth and safe adoption experience for everyone.."
     },
     {
       image: image2,
       category: "Article #03",
-      title: "Inventory Management",
-      description: "Track stock levels in real time with a smart inventory system that helps maintain accuracy and avoid shortages."
+      title: "Pet Care Tips",
+      description: "Get helpful tips on feeding, grooming, and caring for your pets. Ensure your new companion lives a happy and healthy life."
     },
     {
       image: image3,
       category: "Article #04",
-      title: "Appointment Scheduler",
-      description: "Effortlessly manage client bookings with a scheduling system that keeps your calendar organized and your operations running smoothly."
+      title: "Success Stories",
+      description: "Read heartwarming stories of rescued pets who found their forever homes. Be inspired and see the impact of adoption."
     }
   ];
 
@@ -41,12 +42,10 @@ const ArticlePage = () => {
           Articles
         </p>
         <h1 className="max-w-xl text-3xl font-bold leading-tight text-zinc-900 sm:text-4xl">
-         Empowering Startups with Digital Infrastructure
+         A PetAdoptHub is a website for Dog And Cat lovers who willing to Adopt and care a rescue pets .
         </h1>
         <p className="mt-4 max-w-lg text-sm leading-7 text-zinc-600 sm:text-base">
-        To turn a vision into a market-leading reality, businesses need more than just hard work—they need a tactical advantage in how they handle data and operations.
-
-At Centaim, we bridge the gap between where your business is and where it needs to be. We don’t just provide tools; we provide the architectural blueprints for long-term digital success.
+        We aim to promote responsible pet ownership by providing reliable information, clear adoption processes, and guidance to ensure every pet finds the right match. Beyond adoption, PwrAdoption also raises awareness about animal welfare, encouraging people to choose adoption over buying. By using technology to bridge the gap between pets and people, PwrAdoption strives to create a community where every animal is given the love, care, and forever home they truly deserve.”
         </p>
         <div className="mt-6">
           <Button to="/">Back Home</Button>
