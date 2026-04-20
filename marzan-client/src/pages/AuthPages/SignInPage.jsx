@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
 
 const inputClasses =
@@ -7,6 +7,13 @@ const inputClasses =
 const actionButtonClassName = 'w-full rounded-xl py-3 text-[11px] tracking-[0.2em]';
 
 const SignInPage = () => {
+  const navigate = useNavigate();
+
+  const handleSubmit = (event) => {
+    event.preventDefault();
+    navigate('/', { replace: true });
+  };
+
   return (
     <>
       <h1 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">Log In</h1>
@@ -14,7 +21,7 @@ const SignInPage = () => {
         Access your account using the same monochrome wireframe language used across the site.
       </p>
 
-      <form className="mt-8 space-y-5">
+      <form onSubmit={handleSubmit} className="mt-8 space-y-5">
         <div>
           <label htmlFor="signin-email" className="text-sm font-medium text-zinc-700">
             Email Address

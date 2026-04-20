@@ -1,7 +1,6 @@
-import { Link } from 'react-router-dom';
-import Button from '../components/Button';
-import articles from '../assets/article-content.js';
-
+import { Link } from "react-router-dom";
+import Button from "../../components/Button"; 
+import articles from "../../assets/article-content.js"; 
 const ArticleListPage = () => {
   return (
     <div className="flex w-full flex-col gap-8 bg-zinc-50">

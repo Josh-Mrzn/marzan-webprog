@@ -1,6 +1,5 @@
 import React from 'react'
-import Button from '../components/Button';
-
+import Button from "../components/Button"; 
 function NotFoundPage() {
     return (
         <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-zinc-100 via-white to-zinc-200 px-6 py-12">
