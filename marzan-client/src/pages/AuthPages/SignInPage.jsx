@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Button from '../../components/Button';
+import { loginUser } from '../../services/UserService';
 
 const inputClasses =
   'mt-2 w-full rounded-xl border border-zinc-300 bg-zinc-100 px-4 py-3 text-sm text-zinc-900 outline-none transition placeholder:text-zinc-400 focus:border-zinc-900 focus:bg-zinc-50';
@@ -8,18 +10,51 @@ const actionButtonClassName = 'w-full rounded-xl py-3 text-[11px] tracking-[0.2e
 
 const SignInPage = () => {
   const navigate = useNavigate();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
-    navigate('/', { replace: true });
+    setError('');
+    setLoading(true);
+
+    try {
+      const { data } = await loginUser({ email: email.trim().toLowerCase(), password });
+
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('firstName', data.firstName);
+      localStorage.setItem('lastName', data.lastName || '');
+      localStorage.setItem('type', data.type);
+      localStorage.setItem('email', data.email || email);
+
+      navigate('/dashboard', {
+        replace: true,
+        state: { firstName: data.firstName, type: data.type },
+      });
+    } catch (err) {
+      setError(
+        err.response?.data?.message ||
+          'Login failed. Please check your credentials and try again.',
+      );
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <>
       <h1 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">Log In</h1>
       <p className="mt-3 text-sm leading-6 text-zinc-600">
-        Access your account using the same monochrome wireframe language used across the site.
+        Welcome back. Sign in with your admin or editor account to access the dashboard.
       </p>
+
+      {error && (
+        <div className="mt-6 rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+          {error}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit} className="mt-8 space-y-5">
         <div>
@@ -29,8 +64,11 @@ const SignInPage = () => {
           <input
             id="signin-email"
             type="email"
-            placeholder="Placeholder"
+            placeholder="you@example.com"
             autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
             className={inputClasses}
           />
         </div>
@@ -42,8 +80,11 @@ const SignInPage = () => {
           <input
             id="signin-password"
             type="password"
-            placeholder="Placeholder"
+            placeholder="••••••••"
             autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
             className={inputClasses}
           />
           <p className="mt-2 text-xs leading-5 text-zinc-500">
@@ -61,8 +102,12 @@ const SignInPage = () => {
           </button>
         </div>
 
-        <Button type="submit" variant="primary" className={actionButtonClassName}>
-          Log In
+        <Button
+          type="submit"
+          variant="primary"
+          className={`${actionButtonClassName} ${loading ? 'pointer-events-none opacity-70' : ''}`}
+        >
+          {loading ? 'Signing In…' : 'Log In'}
         </Button>
 
         <div className="grid gap-3 pt-2 sm:grid-cols-2">

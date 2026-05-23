@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { styled, alpha, useTheme } from '@mui/material/styles';
+import { styled, useTheme } from '@mui/material/styles';
 import Box from '@mui/material/Box';
 import MuiDrawer from '@mui/material/Drawer';
 import MuiAppBar from '@mui/material/AppBar';
@@ -19,6 +19,7 @@ import Avatar from '@mui/material/Avatar';
 import Badge from '@mui/material/Badge';
 import Tooltip from '@mui/material/Tooltip';
 import Stack from '@mui/material/Stack';
+import Chip from '@mui/material/Chip';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -26,9 +27,11 @@ import SearchIcon from '@mui/icons-material/Search';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import PeopleIcon from '@mui/icons-material/People';
+import ArticleIcon from '@mui/icons-material/Article';
 import NotificationsNoneIcon from '@mui/icons-material/NotificationsNone';
 import LogoutIcon from '@mui/icons-material/Logout';
 import SettingsIcon from '@mui/icons-material/Settings';
+import { clearSession, getCurrentUser } from '../services/auth';
 
 const SIDEBAR_BG = '#0f172a';
 const SIDEBAR_ACTIVE = '#3b82f6';
@@ -36,10 +39,11 @@ const SIDEBAR_TEXT = '#94a3b8';
 const PAGE_BG = '#f1f5f9';
 const drawerWidth = 240;
 
-const dashboardNavItems = [
-  { label: 'Dashboard', title: 'Dashboard', to: '/dashboard/', icon: DashboardIcon },
-  { label: 'Reports', title: 'Reports', to: '/dashboard/reports', icon: AssessmentIcon },
-  { label: 'Users', title: 'Users', to: '/dashboard/users', icon: PeopleIcon },
+const ALL_NAV_ITEMS = [
+  { label: 'Dashboard', title: 'Dashboard', to: '/dashboard/', icon: DashboardIcon, roles: ['admin', 'editor', 'viewer'] },
+  { label: 'Reports', title: 'Reports', to: '/dashboard/reports', icon: AssessmentIcon, roles: ['admin', 'editor', 'viewer'] },
+  { label: 'Articles', title: 'Articles', to: '/dashboard/articles', icon: ArticleIcon, roles: ['admin', 'editor', 'viewer'] },
+  { label: 'Users', title: 'Users', to: '/dashboard/users', icon: PeopleIcon, roles: ['admin', 'editor', 'viewer'] },
 ];
 
 const openedMixin = (theme) => ({
@@ -155,27 +159,45 @@ const StyledInputBase = styled(InputBase)(({ theme }) => ({
   },
 }));
 
-const getPageTitle = (pathname) => {
+const getPageTitle = (pathname, navItems) => {
   const normalized = pathname.replace(/\/$/, '');
-  return dashboardNavItems.find(({ to }) => to.replace(/\/$/, '') === normalized)?.title ?? 'Dashboard';
+  return (
+    navItems.find(({ to }) => to.replace(/\/$/, '') === normalized)?.title ?? 'Dashboard'
+  );
 };
+
+const initialsFrom = (firstName, lastName) =>
+  `${(firstName?.[0] || '').toUpperCase()}${(lastName?.[0] || '').toUpperCase()}` || 'U';
 
 const DashLayout = () => {
   const theme = useTheme();
   const [open, setOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const pageTitle = getPageTitle(location.pathname);
+
+  const currentUser = useMemo(() => getCurrentUser(), []);
+  const userType = currentUser?.type || 'editor';
+
+  const navItems = useMemo(
+    () => ALL_NAV_ITEMS.filter((item) => item.roles.includes(userType)),
+    [userType],
+  );
+
+  const pageTitle = getPageTitle(location.pathname, ALL_NAV_ITEMS);
 
   const handleDrawerOpen = () => setOpen(true);
   const handleDrawerClose = () => setOpen(false);
-  const handleLogout = () => navigate('/');
+  const handleLogout = () => {
+    clearSession();
+    navigate('/auth/signin', { replace: true });
+  };
+
+  const initials = initialsFrom(currentUser?.firstName, currentUser?.lastName);
 
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
 
-      {/* ── AppBar ── */}
       <AppBar position="fixed" open={open}>
         <Toolbar sx={{ gap: 1 }}>
           <IconButton
@@ -187,15 +209,29 @@ const DashLayout = () => {
             <MenuIcon />
           </IconButton>
 
-          <Typography
-            variant="h6"
-            noWrap
-            sx={{ flexGrow: 1, fontWeight: 700, color: '#1e293b', fontSize: 18 }}
-          >
-            {pageTitle}
-          </Typography>
+          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 1.5 }}>
+            <Typography
+              variant="h6"
+              noWrap
+              sx={{ fontWeight: 700, color: '#1e293b', fontSize: 18 }}
+            >
+              {pageTitle}
+            </Typography>
+            {currentUser && (
+              <Chip
+                size="small"
+                label={`Welcome, ${currentUser.firstName}`}
+                sx={{
+                  bgcolor: '#eff6ff',
+                  color: '#1d4ed8',
+                  fontWeight: 600,
+                  display: { xs: 'none', md: 'inline-flex' },
+                }}
+              />
+            )}
+          </Box>
 
-          <Search>
+          <Search sx={{ display: { xs: 'none', md: 'block' } }}>
             <SearchIconWrapper>
               <SearchIcon sx={{ fontSize: 18 }} />
             </SearchIconWrapper>
@@ -235,14 +271,12 @@ const DashLayout = () => {
               ml: 0.5,
             }}
           >
-            AD
+            {initials}
           </Avatar>
         </Toolbar>
       </AppBar>
 
-      {/* ── Sidebar Drawer ── */}
       <Drawer variant="permanent" open={open}>
-        {/* Brand header */}
         <DrawerHeader>
           <Box
             sx={{
@@ -273,7 +307,6 @@ const DashLayout = () => {
           )}
         </DrawerHeader>
 
-        {/* Nav items */}
         <Box sx={{ px: 1, pt: 2, flexGrow: 1 }}>
           {open && (
             <Typography
@@ -292,7 +325,7 @@ const DashLayout = () => {
             </Typography>
           )}
           <List disablePadding>
-            {dashboardNavItems.map(({ label, to, icon: Icon }) => {
+            {navItems.map(({ label, to, icon: Icon }) => {
               const isActive = location.pathname.replace(/\/$/, '') === to.replace(/\/$/, '');
               return (
                 <ListItem key={to} disablePadding sx={{ display: 'block', mb: 0.5 }}>
@@ -353,8 +386,7 @@ const DashLayout = () => {
           </List>
         </Box>
 
-        {/* Bottom user card */}
-        {open && (
+        {open && currentUser && (
           <Box
             sx={{
               m: 1.5,
@@ -366,14 +398,14 @@ const DashLayout = () => {
           >
             <Stack direction="row" spacing={1.5} alignItems="center">
               <Avatar sx={{ bgcolor: SIDEBAR_ACTIVE, width: 32, height: 32, fontSize: 12, fontWeight: 700 }}>
-                AD
+                {initials}
               </Avatar>
               <Box sx={{ overflow: 'hidden', flexGrow: 1 }}>
-                <Typography variant="body2" sx={{ color: '#e2e8f0', fontWeight: 600, lineHeight: 1.3 }}>
-                  Admin User
+                <Typography variant="body2" sx={{ color: '#e2e8f0', fontWeight: 600, lineHeight: 1.3 }} noWrap>
+                  {currentUser.firstName} {currentUser.lastName}
                 </Typography>
-                <Typography variant="caption" sx={{ color: '#475569', fontSize: 11 }}>
-                  admin@example.com
+                <Typography variant="caption" sx={{ color: '#475569', fontSize: 11, textTransform: 'capitalize' }}>
+                  {userType} · {currentUser.email}
                 </Typography>
               </Box>
             </Stack>
@@ -381,7 +413,6 @@ const DashLayout = () => {
         )}
       </Drawer>
 
-      {/* ── Main Content ── */}
       <Box component="main" sx={{ flexGrow: 1, p: 3, backgroundColor: PAGE_BG, minHeight: '100vh' }}>
         <DrawerHeader />
         <Outlet />

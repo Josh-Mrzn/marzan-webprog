@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Alert,
   Avatar,
@@ -6,6 +6,7 @@ import {
   Button,
   Card,
   Chip,
+  CircularProgress,
   Dialog,
   DialogActions,
   DialogContent,
@@ -36,20 +37,31 @@ import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
 import EditIcon from '@mui/icons-material/Edit';
 import RestartAltIcon from '@mui/icons-material/RestartAlt';
-import usersSeed from '../../assets/users.json';
+import {
+  createUser as createUserApi,
+  deleteUser as deleteUserApi,
+  fetchUsers,
+  updateUser as updateUserApi,
+} from '../../services/UserService';
 
-// ── Constants ─────────────────────────────────────────────────────────────────
-
-const ROLES = ['admin', 'editor', 'viewer'];
+const TYPES = ['admin', 'editor', 'viewer'];
 const GENDERS = ['male', 'female', 'other'];
-const AVATAR_COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#84cc16', '#f97316', '#ec4899'];
+const AVATAR_COLORS = [
+  '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
+  '#8b5cf6', '#06b6d4', '#84cc16', '#f97316', '#ec4899',
+];
 
-const getAvatarColor = (id) => AVATAR_COLORS[(id - 1) % AVATAR_COLORS.length];
+const getAvatarColor = (key) => {
+  const seed = String(key || '')
+    .split('')
+    .reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  return AVATAR_COLORS[seed % AVATAR_COLORS.length];
+};
 
 const labelize = (value) =>
   value ? `${value.charAt(0).toUpperCase()}${value.slice(1)}` : '';
 
-const roleChipColor = {
+const typeChipColor = {
   admin: { bg: '#eff6ff', color: '#3b82f6' },
   editor: { bg: '#f5f3ff', color: '#8b5cf6' },
   viewer: { bg: '#f1f5f9', color: '#64748b' },
@@ -62,79 +74,67 @@ const blankForm = {
   gender: '',
   contactNumber: '',
   email: '',
-  role: 'editor',
+  type: 'editor',
   username: '',
   password: '',
   address: '',
   isActive: true,
 };
 
-// ── Seed loader ───────────────────────────────────────────────────────────────
-
-const loadUsers = () => {
-  try {
-    return {
-      users: usersSeed.map((user, index) => ({
-        id: Number(user.id) || index + 1,
-        firstName: String(user.firstName ?? '').trim(),
-        lastName: String(user.lastName ?? '').trim(),
-        age: String(user.age ?? '').trim(),
-        gender: GENDERS.includes(String(user.gender ?? '').trim().toLowerCase())
-          ? String(user.gender ?? '').trim().toLowerCase()
-          : '',
-        contactNumber: String(user.contactNumber ?? '').trim(),
-        email: String(user.email ?? '').trim().toLowerCase(),
-        role: ROLES.includes(String(user.role ?? '').trim().toLowerCase())
-          ? String(user.role ?? '').trim().toLowerCase()
-          : 'editor',
-        username: String(user.username ?? '').trim().toLowerCase(),
-        password: String(user.password ?? ''),
-        address: String(user.address ?? '').trim(),
-        isActive: typeof user.isActive === 'boolean' ? user.isActive : true,
-      })),
-      error: '',
-    };
-  } catch {
-    return {
-      users: [],
-      error: 'Unable to read users from src/assets/users.json.',
-    };
-  }
-};
-
-const seed = loadUsers();
-
-// ── Page ──────────────────────────────────────────────────────────────────────
-
 function UsersPage() {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
-  const [users, setUsers] = useState(seed.users);
+  const [users, setUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const [modal, setModal] = useState({ open: false, id: null });
   const [form, setForm] = useState(blankForm);
   const [errors, setErrors] = useState({});
+  const [formError, setFormError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  // Search + filter state
   const [search, setSearch] = useState('');
-  const [filterRole, setFilterRole] = useState('all');
+  const [filterType, setFilterType] = useState('all');
   const [filterGender, setFilterGender] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
 
   const printRef = useRef(null);
 
-  // ── Form helpers ──
+  const loadUsers = async () => {
+    setLoading(true);
+    setLoadError('');
+    try {
+      const { data } = await fetchUsers();
+      const records = (data?.users || []).map((u) => ({ ...u, id: u._id || u.id }));
+      setUsers(records);
+    } catch (error) {
+      setLoadError(
+        error.response?.data?.message ||
+          'Unable to load users. Please ensure the API server is running.',
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadUsers();
+  }, []);
+
   const resetForm = () => {
     setForm({ ...blankForm });
     setErrors({});
+    setFormError('');
     setShowPassword(false);
   };
 
   const openModal = (user) => {
     setModal({ open: true, id: user?.id ?? null });
-    setForm(user ? { ...blankForm, ...user } : { ...blankForm });
+    setForm(user ? { ...blankForm, ...user, password: '' } : { ...blankForm });
     setErrors({});
+    setFormError('');
     setShowPassword(false);
   };
 
@@ -153,58 +153,56 @@ function UsersPage() {
     }
   };
 
-  // ── Validation (Enhancement 3) ──
   const validate = () => {
     const nextErrors = {};
-    const email = form.email.trim().toLowerCase();
-    const username = form.username.trim().toLowerCase();
-    const contact = form.contactNumber.trim();
-    const age = form.age.trim();
-    const password = form.password;
+    const email = String(form.email || '').trim().toLowerCase();
+    const username = String(form.username || '').trim().toLowerCase();
+    const contact = String(form.contactNumber || '').trim();
+    const age = String(form.age || '').trim();
+    const password = form.password || '';
 
-    [
+    const required = [
       ['firstName', 'First name'],
       ['lastName', 'Last name'],
       ['age', 'Age'],
       ['gender', 'Gender'],
       ['contactNumber', 'Contact number'],
       ['email', 'Email'],
-      ['role', 'Role'],
+      ['type', 'Type'],
       ['username', 'Username'],
-      ['password', 'Password'],
       ['address', 'Address'],
-    ].forEach(([key, label]) => {
+    ];
+
+    required.forEach(([key, label]) => {
       if (!String(form[key] ?? '').trim()) {
         nextErrors[key] = `${label} is required.`;
       }
     });
 
-    // Email format
+    if (!modal.id && !password) {
+      nextErrors.password = 'Password is required.';
+    }
+
     if (!nextErrors.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       nextErrors.email = 'Enter a valid email address.';
     }
 
-    // Age must be a number only
     if (!nextErrors.age && !/^\d+$/.test(age)) {
       nextErrors.age = 'Age must be a number only.';
     }
 
-    // Contact number must be 11 digits
     if (!nextErrors.contactNumber && !/^\d{11}$/.test(contact)) {
       nextErrors.contactNumber = 'Contact number must be 11 digits.';
     }
 
-    // Username must not contain spaces
     if (!nextErrors.username && /\s/.test(username)) {
       nextErrors.username = 'Username must not contain spaces.';
     }
 
-    // Password must be at least 8 characters
-    if (!nextErrors.password && password.length < 8) {
+    if (!nextErrors.password && password && password.length < 8) {
       nextErrors.password = 'Password must be at least 8 characters.';
     }
 
-    // Email uniqueness
     if (
       !nextErrors.email &&
       users.some((user) => user.id !== modal.id && user.email === email)
@@ -212,7 +210,6 @@ function UsersPage() {
       nextErrors.email = 'Email address already exists.';
     }
 
-    // Username uniqueness
     if (
       !nextErrors.username &&
       users.some((user) => user.id !== modal.id && user.username === username)
@@ -223,8 +220,9 @@ function UsersPage() {
     return nextErrors;
   };
 
-  const handleSubmit = (event) => {
+  const handleSubmit = async (event) => {
     event.preventDefault();
+    setFormError('');
     const nextErrors = validate();
 
     if (Object.keys(nextErrors).length) {
@@ -232,44 +230,72 @@ function UsersPage() {
       return;
     }
 
-    const nextUser = {
+    const payload = {
       firstName: form.firstName.trim(),
       lastName: form.lastName.trim(),
-      age: form.age.trim(),
+      age: String(form.age).trim(),
       gender: form.gender.trim().toLowerCase(),
       contactNumber: form.contactNumber.trim(),
       email: form.email.trim().toLowerCase(),
-      role: form.role.trim().toLowerCase(),
+      type: form.type.trim().toLowerCase(),
       username: form.username.trim().toLowerCase(),
-      password: form.password,
       address: form.address.trim(),
-      isActive: form.isActive,
+      isActive: !!form.isActive,
     };
 
-    setUsers((prev) =>
-      modal.id
-        ? prev.map((user) => (user.id === modal.id ? { ...user, ...nextUser } : user))
-        : [
-            ...prev,
-            {
-              id: prev.reduce((max, user) => Math.max(max, Number(user.id) || 0), 0) + 1,
-              ...nextUser,
-            },
-          ],
-    );
-    closeModal();
+    if (form.password) {
+      payload.password = form.password;
+    }
+
+    setSubmitting(true);
+    try {
+      if (modal.id) {
+        await updateUserApi(modal.id, payload);
+      } else {
+        await createUserApi(payload);
+      }
+      await loadUsers();
+      closeModal();
+    } catch (error) {
+      setFormError(
+        error.response?.data?.message || 'Unable to save the user. Please try again.',
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
-  const toggleStatus = (id) => {
-    setUsers((prev) =>
-      prev.map((user) => (user.id === id ? { ...user, isActive: !user.isActive } : user)),
-    );
+  const toggleStatus = async (user) => {
+    try {
+      await updateUserApi(user.id, { isActive: !user.isActive });
+      setUsers((prev) =>
+        prev.map((u) => (u.id === user.id ? { ...u, isActive: !u.isActive } : u)),
+      );
+    } catch (error) {
+      setLoadError(
+        error.response?.data?.message || 'Unable to update user status.',
+      );
+    }
+  };
+
+  const handleDelete = async (user) => {
+    if (!window.confirm(`Delete ${user.firstName} ${user.lastName}? This cannot be undone.`)) {
+      return;
+    }
+    try {
+      await deleteUserApi(user.id);
+      setUsers((prev) => prev.filter((u) => u.id !== user.id));
+    } catch (error) {
+      setLoadError(
+        error.response?.data?.message || 'Unable to delete the user.',
+      );
+    }
   };
 
   const fieldProps = (name, label, extra = {}) => ({
     name,
     label,
-    value: form[name],
+    value: form[name] ?? '',
     onChange: handleChange,
     error: Boolean(errors[name]),
     helperText: errors[name] || '',
@@ -277,46 +303,41 @@ function UsersPage() {
     ...extra,
   });
 
-  // ── Filtering (Enhancement 2) ──
   const filteredUsers = useMemo(() => {
     const q = search.trim().toLowerCase();
     return users.filter((user) => {
       const matchesSearch =
         !q ||
-        user.firstName.toLowerCase().includes(q) ||
-        user.lastName.toLowerCase().includes(q) ||
-        user.email.toLowerCase().includes(q) ||
-        user.username.toLowerCase().includes(q);
-      const matchesRole = filterRole === 'all' || user.role === filterRole;
+        (user.firstName || '').toLowerCase().includes(q) ||
+        (user.lastName || '').toLowerCase().includes(q) ||
+        (user.email || '').toLowerCase().includes(q) ||
+        (user.username || '').toLowerCase().includes(q);
+      const matchesType = filterType === 'all' || user.type === filterType;
       const matchesGender = filterGender === 'all' || user.gender === filterGender;
       const matchesStatus =
         filterStatus === 'all' ||
         (filterStatus === 'active' && user.isActive) ||
         (filterStatus === 'inactive' && !user.isActive);
-      return matchesSearch && matchesRole && matchesGender && matchesStatus;
+      return matchesSearch && matchesType && matchesGender && matchesStatus;
     });
-  }, [users, search, filterRole, filterGender, filterStatus]);
+  }, [users, search, filterType, filterGender, filterStatus]);
 
   const activeCount = users.filter((u) => u.isActive).length;
   const inactiveCount = users.length - activeCount;
   const filtersActive =
     search.trim() !== '' ||
-    filterRole !== 'all' ||
+    filterType !== 'all' ||
     filterGender !== 'all' ||
     filterStatus !== 'all';
 
   const resetFilters = () => {
     setSearch('');
-    setFilterRole('all');
+    setFilterType('all');
     setFilterGender('all');
     setFilterStatus('all');
   };
 
-  // ── PDF print (Enhancement 1) ──
   const handlePrint = () => {
-    const printContent = printRef.current;
-    if (!printContent) return;
-
     const printWindow = window.open('', '_blank', 'width=1200,height=900');
     if (!printWindow) return;
 
@@ -333,14 +354,14 @@ function UsersPage() {
 
     const rowsHtml = filteredUsers
       .map(
-        (u) => `
+        (u, i) => `
           <tr>
-            <td>${u.id}</td>
+            <td>${i + 1}</td>
             <td>${u.firstName} ${u.lastName}</td>
             <td>${u.username}</td>
             <td>${u.email}</td>
             <td>${u.contactNumber}</td>
-            <td>${labelize(u.role)}</td>
+            <td>${labelize(u.type)}</td>
             <td>${labelize(u.gender)}</td>
             <td>${u.isActive ? 'Active' : 'Inactive'}</td>
           </tr>`,
@@ -358,64 +379,17 @@ function UsersPage() {
           <style>
             @page { size: A4; margin: 16mm; }
             * { box-sizing: border-box; }
-            body {
-              margin: 0;
-              font-family: Arial, Helvetica, sans-serif;
-              background: #fff;
-              color: #1f2937;
-            }
+            body { margin: 0; font-family: Arial, Helvetica, sans-serif; background: #fff; color: #1f2937; }
             .report-shell { padding: 28px; }
-            .report-header {
-              margin-bottom: 24px;
-              padding-bottom: 14px;
-              border-bottom: 1px solid #d1d5db;
-            }
-            .report-header h1 {
-              margin: 0 0 6px;
-              font-size: 28px;
-              font-weight: 700;
-            }
-            .report-header p {
-              margin: 0;
-              font-size: 14px;
-              color: #6b7280;
-              line-height: 1.5;
-            }
-            .summary {
-              display: flex;
-              gap: 12px;
-              margin-bottom: 18px;
-              flex-wrap: wrap;
-            }
-            .summary .pill {
-              padding: 6px 12px;
-              border-radius: 999px;
-              font-size: 12px;
-              font-weight: 600;
-              border: 1px solid #e5e7eb;
-              background: #f9fafb;
-            }
-            table {
-              width: 100%;
-              border-collapse: collapse;
-              font-size: 12px;
-              page-break-inside: auto;
-            }
-            thead {
-              background: #f1f5f9;
-            }
-            th, td {
-              text-align: left;
-              padding: 8px 10px;
-              border-bottom: 1px solid #e5e7eb;
-            }
-            th {
-              font-weight: 700;
-              color: #334155;
-              text-transform: uppercase;
-              letter-spacing: 0.4px;
-              font-size: 11px;
-            }
+            .report-header { margin-bottom: 24px; padding-bottom: 14px; border-bottom: 1px solid #d1d5db; }
+            .report-header h1 { margin: 0 0 6px; font-size: 28px; font-weight: 700; }
+            .report-header p { margin: 0; font-size: 14px; color: #6b7280; line-height: 1.5; }
+            .summary { display: flex; gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+            .summary .pill { padding: 6px 12px; border-radius: 999px; font-size: 12px; font-weight: 600; border: 1px solid #e5e7eb; background: #f9fafb; }
+            table { width: 100%; border-collapse: collapse; font-size: 12px; page-break-inside: auto; }
+            thead { background: #f1f5f9; }
+            th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #e5e7eb; }
+            th { font-weight: 700; color: #334155; text-transform: uppercase; letter-spacing: 0.4px; font-size: 11px; }
             tr { page-break-inside: avoid; }
           </style>
         </head>
@@ -423,7 +397,7 @@ function UsersPage() {
           <main class="report-shell">
             <header class="report-header">
               <h1>Users Report</h1>
-              <p>Directory snapshot of registered users with their roles, contact details, and account status.</p>
+              <p>Directory snapshot of registered users with their types, contact details, and account status.</p>
               <p>Prepared on ${exportedAt}</p>
             </header>
             <section class="summary">
@@ -436,18 +410,18 @@ function UsersPage() {
               <table>
                 <thead>
                   <tr>
-                    <th>ID</th>
+                    <th>#</th>
                     <th>Full Name</th>
                     <th>Username</th>
                     <th>Email</th>
                     <th>Contact</th>
-                    <th>Role</th>
+                    <th>Type</th>
                     <th>Gender</th>
                     <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  ${rowsHtml || `<tr><td colspan="8" style="text-align:center;padding:24px;color:#6b7280">No users to export.</td></tr>`}
+                  ${rowsHtml || '<tr><td colspan="8" style="text-align:center;padding:24px;color:#6b7280">No users to export.</td></tr>'}
                 </tbody>
               </table>
             </section>
@@ -460,22 +434,20 @@ function UsersPage() {
     printWindow.print();
   };
 
-  // ── Columns ──
   const columns = [
-    { field: 'id', headerName: 'ID', width: 70 },
     {
       field: 'fullName',
       headerName: 'Full Name',
       flex: 1,
-      minWidth: 180,
+      minWidth: 220,
       renderCell: (params) => {
         const initial = (params.row.firstName || params.row.lastName || '?')[0].toUpperCase();
         return (
           <Stack direction="row" alignItems="center" spacing={1.2} sx={{ height: '100%' }}>
             <Avatar
               sx={{
-                width: 32,
-                height: 32,
+                width: 34,
+                height: 34,
                 bgcolor: getAvatarColor(params.row.id),
                 fontSize: 13,
                 fontWeight: 700,
@@ -496,7 +468,7 @@ function UsersPage() {
       },
     },
     { field: 'username', headerName: 'Username', minWidth: 140, flex: 0.7 },
-    { field: 'age', headerName: 'Age', width: 80, type: 'number' },
+    { field: 'age', headerName: 'Age', width: 80 },
     {
       field: 'gender',
       headerName: 'Gender',
@@ -509,14 +481,14 @@ function UsersPage() {
       minWidth: 150,
     },
     {
-      field: 'role',
-      headerName: 'Role',
+      field: 'type',
+      headerName: 'Type',
       width: 120,
       renderCell: (params) => {
-        const cfg = roleChipColor[params.row.role] ?? roleChipColor.viewer;
+        const cfg = typeChipColor[params.row.type] ?? typeChipColor.viewer;
         return (
           <Chip
-            label={labelize(params.row.role)}
+            label={labelize(params.row.type)}
             size="small"
             sx={{ bgcolor: cfg.bg, color: cfg.color, fontWeight: 600 }}
           />
@@ -545,7 +517,7 @@ function UsersPage() {
     {
       field: 'actions',
       headerName: 'Actions',
-      minWidth: 220,
+      minWidth: 240,
       sortable: false,
       filterable: false,
       renderCell: ({ row }) => (
@@ -563,10 +535,18 @@ function UsersPage() {
             size="small"
             variant="contained"
             color={row.isActive ? 'warning' : 'success'}
-            onClick={() => toggleStatus(row.id)}
+            onClick={() => toggleStatus(row)}
             sx={{ textTransform: 'none', borderRadius: 2, fontWeight: 600, boxShadow: 'none' }}
           >
             {row.isActive ? 'Disable' : 'Activate'}
+          </Button>
+          <Button
+            size="small"
+            color="error"
+            onClick={() => handleDelete(row)}
+            sx={{ textTransform: 'none', borderRadius: 2, fontWeight: 600 }}
+          >
+            Delete
           </Button>
         </Stack>
       ),
@@ -575,7 +555,6 @@ function UsersPage() {
 
   return (
     <Box sx={{ width: '100%', minWidth: 0 }}>
-      {/* ── Page header ── */}
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
         justifyContent="space-between"
@@ -596,12 +575,7 @@ function UsersPage() {
             variant="outlined"
             startIcon={<PictureAsPdfIcon />}
             onClick={handlePrint}
-            sx={{
-              borderRadius: 2,
-              textTransform: 'none',
-              fontWeight: 600,
-              px: 2.5,
-            }}
+            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600, px: 2.5 }}
           >
             Export PDF
           </Button>
@@ -623,7 +597,6 @@ function UsersPage() {
         </Stack>
       </Stack>
 
-      {/* ── Summary chips ── */}
       <Stack direction="row" spacing={1.5} sx={{ mb: 3 }} flexWrap="wrap" useFlexGap>
         <Chip
           icon={<PeopleAltIcon sx={{ fontSize: 16 }} />}
@@ -646,13 +619,12 @@ function UsersPage() {
         )}
       </Stack>
 
-      {seed.error ? (
-        <Alert severity="error" sx={{ mb: 2 }}>
-          {seed.error}
+      {loadError && (
+        <Alert severity="error" sx={{ mb: 2 }} onClose={() => setLoadError('')}>
+          {loadError}
         </Alert>
-      ) : null}
+      )}
 
-      {/* ── Toolbar: search + filters (Enhancement 2) ── */}
       <Paper
         elevation={0}
         sx={{
@@ -663,21 +635,13 @@ function UsersPage() {
           boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
         }}
       >
-        <Stack
-          direction={{ xs: 'column', md: 'row' }}
-          spacing={1.5}
-          alignItems={{ md: 'center' }}
-        >
+        <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} alignItems={{ md: 'center' }}>
           <TextField
             size="small"
             placeholder="Search by name, email, or username…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            sx={{
-              flex: 1,
-              minWidth: 220,
-              '& .MuiOutlinedInput-root': { borderRadius: 2 },
-            }}
+            sx={{ flex: 1, minWidth: 220, '& .MuiOutlinedInput-root': { borderRadius: 2 } }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -688,29 +652,19 @@ function UsersPage() {
           />
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ width: { xs: '100%', md: 'auto' } }}>
             <FormControl size="small" sx={{ minWidth: 130 }}>
-              <InputLabel>Role</InputLabel>
-              <Select
-                label="Role"
-                value={filterRole}
-                onChange={(e) => setFilterRole(e.target.value)}
-                sx={{ borderRadius: 2 }}
-              >
-                <MenuItem value="all">All Roles</MenuItem>
-                {ROLES.map((role) => (
-                  <MenuItem key={role} value={role}>
-                    {labelize(role)}
+              <InputLabel>Type</InputLabel>
+              <Select label="Type" value={filterType} onChange={(e) => setFilterType(e.target.value)} sx={{ borderRadius: 2 }}>
+                <MenuItem value="all">All Types</MenuItem>
+                {TYPES.map((t) => (
+                  <MenuItem key={t} value={t}>
+                    {labelize(t)}
                   </MenuItem>
                 ))}
               </Select>
             </FormControl>
             <FormControl size="small" sx={{ minWidth: 130 }}>
               <InputLabel>Gender</InputLabel>
-              <Select
-                label="Gender"
-                value={filterGender}
-                onChange={(e) => setFilterGender(e.target.value)}
-                sx={{ borderRadius: 2 }}
-              >
+              <Select label="Gender" value={filterGender} onChange={(e) => setFilterGender(e.target.value)} sx={{ borderRadius: 2 }}>
                 <MenuItem value="all">All Genders</MenuItem>
                 {GENDERS.map((g) => (
                   <MenuItem key={g} value={g}>
@@ -721,12 +675,7 @@ function UsersPage() {
             </FormControl>
             <FormControl size="small" sx={{ minWidth: 130 }}>
               <InputLabel>Status</InputLabel>
-              <Select
-                label="Status"
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                sx={{ borderRadius: 2 }}
-              >
+              <Select label="Status" value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)} sx={{ borderRadius: 2 }}>
                 <MenuItem value="all">All Status</MenuItem>
                 <MenuItem value="active">Active</MenuItem>
                 <MenuItem value="inactive">Inactive</MenuItem>
@@ -750,14 +699,7 @@ function UsersPage() {
           </Stack>
         </Stack>
         {filtersActive && (
-          <Stack
-            direction="row"
-            spacing={1}
-            alignItems="center"
-            sx={{ mt: 1.5, color: '#64748b' }}
-            flexWrap="wrap"
-            useFlexGap
-          >
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1.5, color: '#64748b' }} flexWrap="wrap" useFlexGap>
             <FilterListIcon sx={{ fontSize: 16 }} />
             <Typography variant="caption">
               Showing {filteredUsers.length} of {users.length} users
@@ -766,7 +708,6 @@ function UsersPage() {
         )}
       </Paper>
 
-      {/* ── DataGrid ── */}
       <Card
         ref={printRef}
         sx={{
@@ -776,14 +717,21 @@ function UsersPage() {
           overflow: 'hidden',
         }}
       >
-        {users.length > 0 ? (
+        {loading ? (
+          <Stack alignItems="center" justifyContent="center" sx={{ py: 8 }}>
+            <CircularProgress size={32} />
+            <Typography variant="caption" color="text.secondary" sx={{ mt: 1.5 }}>
+              Loading users…
+            </Typography>
+          </Stack>
+        ) : users.length > 0 ? (
           <Box sx={{ height: { xs: 460, sm: 560 }, width: '100%', minWidth: 0 }}>
             <DataGrid
               rows={filteredUsers}
               columns={columns}
               disableRowSelectionOnClick
               pageSizeOptions={[5, 10, 25]}
-              initialState={{ pagination: { paginationModel: { pageSize: 5, page: 0 } } }}
+              initialState={{ pagination: { paginationModel: { pageSize: 10, page: 0 } } }}
               getRowHeight={() => 56}
               sx={{
                 border: 'none',
@@ -795,9 +743,7 @@ function UsersPage() {
                 },
                 '& .MuiDataGrid-row:hover': { backgroundColor: '#f0f7ff' },
                 '& .MuiDataGrid-cell, & .MuiDataGrid-columnHeader': { outline: 'none' },
-                '& .MuiDataGrid-footerContainer': {
-                  borderTop: '1px solid #f1f5f9',
-                },
+                '& .MuiDataGrid-footerContainer': { borderTop: '1px solid #f1f5f9' },
                 borderRadius: 3,
               }}
             />
@@ -809,19 +755,17 @@ function UsersPage() {
         )}
       </Card>
 
-      {/* ── Add / Edit Dialog ── */}
-      <Dialog
-        open={modal.open}
-        onClose={closeModal}
-        fullWidth
-        fullScreen={isMobile}
-        maxWidth="md"
-      >
+      <Dialog open={modal.open} onClose={closeModal} fullWidth fullScreen={isMobile} maxWidth="md">
         <Box component="form" onSubmit={handleSubmit}>
           <DialogTitle sx={{ fontWeight: 700 }}>
             {modal.id ? 'Edit User' : 'Add User'}
           </DialogTitle>
           <DialogContent dividers sx={{ px: { xs: 2, sm: 3 } }}>
+            {formError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {formError}
+              </Alert>
+            )}
             <Stack spacing={2} sx={{ pt: 1 }}>
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
                 <TextField {...fieldProps('firstName', 'First Name')} />
@@ -845,10 +789,10 @@ function UsersPage() {
               </Stack>
 
               <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-                <TextField {...fieldProps('role', 'Role', { select: true })}>
-                  {ROLES.map((role) => (
-                    <MenuItem key={role} value={role}>
-                      {labelize(role)}
+                <TextField {...fieldProps('type', 'Type', { select: true })}>
+                  {TYPES.map((t) => (
+                    <MenuItem key={t} value={t}>
+                      {labelize(t)}
                     </MenuItem>
                   ))}
                 </TextField>
@@ -856,7 +800,7 @@ function UsersPage() {
               </Stack>
 
               <TextField
-                {...fieldProps('password', 'Password', {
+                {...fieldProps('password', modal.id ? 'New Password (optional)' : 'Password', {
                   type: showPassword ? 'text' : 'password',
                   InputProps: {
                     endAdornment: (
@@ -878,13 +822,7 @@ function UsersPage() {
               <TextField {...fieldProps('address', 'Address', { multiline: true, rows: 3 })} />
 
               <FormControlLabel
-                control={
-                  <Switch
-                    name="isActive"
-                    checked={form.isActive}
-                    onChange={handleChange}
-                  />
-                }
+                control={<Switch name="isActive" checked={!!form.isActive} onChange={handleChange} />}
                 label={form.isActive ? 'User status: Active' : 'User status: Inactive'}
               />
             </Stack>
@@ -896,6 +834,7 @@ function UsersPage() {
             <Button
               type="submit"
               variant="contained"
+              disabled={submitting}
               sx={{
                 textTransform: 'none',
                 fontWeight: 600,
@@ -904,7 +843,7 @@ function UsersPage() {
                 '&:hover': { bgcolor: '#2563eb' },
               }}
             >
-              {modal.id ? 'Update User' : 'Save User'}
+              {submitting ? 'Saving…' : modal.id ? 'Update User' : 'Save User'}
             </Button>
           </DialogActions>
         </Box>
