@@ -2,10 +2,10 @@ import { createBrowserRouter, RouterProvider } from 'react-router-dom'
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 // HomePage Structure
 import Layout from './layouts/Layout';
-import ArticlePage from './pages/LandingPages/ArticlePage';
-import HomePage from './pages/LandingPages/HomePage';
-import AboutPage from './pages/LandingPages/AboutPage';
-import ArticleListPage from './pages/LandingPages/ArticleListPage';
+import ArticlePage from './pages/landingPages/ArticlePage';
+import HomePage from './pages/landingPages/HomePage';
+import AboutPage from './pages/landingPages/AboutPage';
+import ArticleListPage from './pages/landingPages/ArticleListPage';
 
 import AuthLayout from './layouts/AuthLayout';
 import SignInPage from './pages/AuthPages/SignInPage';
