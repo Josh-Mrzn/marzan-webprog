@@ -1,46 +1,31 @@
 const dns = require('dns');
-dns.setServers(['8.8.8.8', '8.8.4.4']);
+dns.setServers(['8.8.8.8', '8.8.4.4']); // Fixes local Node.js v24 network lookup bug
+
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const bodyParser = require('body-parser');
 const connectDB = require('./config/db');
 const userRoutes = require('./routes/userRoutes');
 const articleRoutes = require('./routes/articleRoutes');
 
 const app = express();
 
+// Connect to MongoDB Atlas
 connectDB();
 
+// Essential Middleware 
 app.use(express.json());
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
-app.use(cors());
+app.use(express.urlencoded({ extended: true }));
 
-const corsOptions = {
+// Clean CORS configuration 
+// (Vercel.json handles the main preflight headers on production; this keeps local dev working)
+app.use(cors({
   origin: '*',
   credentials: true,
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
-  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE'],
-  preflightContinue: false,
-  optionsSuccessStatus: 204,
-};
-app.options('*', cors(corsOptions));
-app.use(cors(corsOptions));
+  methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS']
+}));
 
-app.use((req, res, next) => {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'Origin, X-Requested-With, Content, Accept, Content-Type, Authorization',
-  );
-  res.setHeader(
-    'Access-Control-Allow-Methods',
-    'GET, POST, PUT, DELETE, PATCH, OPTIONS',
-  );
-  next();
-});
-
+// Base API Status Route
 app.get('/', (req, res) =>
   res.json({
     name: 'marzan-server',
@@ -49,9 +34,11 @@ app.get('/', (req, res) =>
   }),
 );
 
+// App Routes
 app.use('/api/users', userRoutes);
 app.use('/api/articles', articleRoutes);
 
+// Global Error Handler
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ message: 'Server Error' });
