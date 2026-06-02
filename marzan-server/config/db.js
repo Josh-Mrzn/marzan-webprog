@@ -1,4 +1,9 @@
 const mongoose = require('mongoose');
+const dns = require('dns');
+
+// Force Node.js to use Google DNS for this process 
+// to bypass the querySrv ECONNREFUSED network glitch.
+dns.setServers(['8.8.8.8', '8.8.4.4']);
 
 const connectDB = async () => {
   try {
