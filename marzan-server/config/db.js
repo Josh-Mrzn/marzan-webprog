@@ -1,9 +1,11 @@
 const mongoose = require('mongoose');
 const dns = require('dns');
 
-// Force Node.js to use Google DNS for this process 
-// to bypass the querySrv ECONNREFUSED network glitch.
-dns.setServers(['8.8.8.8', '8.8.4.4']);
+// ONLY apply the Google DNS patch if running locally.
+// Forcing custom DNS servers inside Vercel's isolated network triggers a crash!
+if (process.env.NODE_ENV !== 'production') {
+  dns.setServers(['8.8.8.8', '8.8.4.4']);
+}
 
 const connectDB = async () => {
   try {
@@ -11,7 +13,7 @@ const connectDB = async () => {
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
     console.error(`Error: ${error.message}`);
-    process.exit(1);
+    process.exit(1); // Triggers the "exited with exit status: 1" Vercel error if connection fails
   }
 };
 
