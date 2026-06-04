@@ -11,6 +11,7 @@ const Button = ({
   type = 'button',
   variant = 'secondary',
   className = '',
+  onClick,
 }) => {
   const classes = [
     'inline-flex items-center justify-center rounded-full border-2 border-zinc-900 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.24em] transition',
@@ -29,7 +30,7 @@ const Button = ({
   }
 
   return (
-    <button type={type} className={classes}>
+    <button type={type} className={classes} onClick={onClick}>
       {children}
     </button>
   );

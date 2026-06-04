@@ -39,7 +39,7 @@ const SEED_USERS = [
     gender: 'female',
     contactNumber: '09193456789',
     email: 'bianca.cruz@marzan.dev',
-    type: 'editor',
+    type: 'admin',
     username: 'biancacruz',
     password: 'Bianca123!',
     address: 'Quezon City, Metro Manila',

@@ -40,10 +40,10 @@ const PAGE_BG = '#f1f5f9';
 const drawerWidth = 240;
 
 const ALL_NAV_ITEMS = [
-  { label: 'Dashboard', title: 'Dashboard', to: '/dashboard/', icon: DashboardIcon, roles: ['admin', 'editor', 'viewer'] },
-  { label: 'Reports', title: 'Reports', to: '/dashboard/reports', icon: AssessmentIcon, roles: ['admin', 'editor', 'viewer'] },
-  { label: 'Articles', title: 'Articles', to: '/dashboard/articles', icon: ArticleIcon, roles: ['admin', 'editor', 'viewer'] },
-  { label: 'Users', title: 'Users', to: '/dashboard/users', icon: PeopleIcon, roles: ['admin', 'editor', 'viewer'] },
+  { label: 'Dashboard', title: 'Dashboard', to: '/dashboard/', icon: DashboardIcon, roles: ['admin'] },
+  { label: 'Reports', title: 'Reports', to: '/dashboard/reports', icon: AssessmentIcon, roles: ['admin'] },
+  { label: 'Articles', title: 'Articles', to: '/dashboard/articles', icon: ArticleIcon, roles: ['admin'] },
+  { label: 'Users', title: 'Users', to: '/dashboard/users', icon: PeopleIcon, roles: ['admin'] },
 ];
 
 const openedMixin = (theme) => ({
@@ -176,7 +176,7 @@ const DashLayout = () => {
   const navigate = useNavigate();
 
   const currentUser = useMemo(() => getCurrentUser(), []);
-  const userType = currentUser?.type || 'editor';
+  const userType = currentUser?.type || 'admin';
 
   const navItems = useMemo(
     () => ALL_NAV_ITEMS.filter((item) => item.roles.includes(userType)),

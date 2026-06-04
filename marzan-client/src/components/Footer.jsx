@@ -67,7 +67,7 @@ const Footer = () => {
         {/* Bottom Bar */}
         <div className="mt-12 border-t border-zinc-100 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-xs text-zinc-400">
-            © {new Date().getFullYear()} Centaim Inc. All rights reserved.
+            © {new Date().getFullYear()} GooDawgs Inc. All rights reserved.
           </p>
           <div className="flex gap-6">
             {/* You can add Social Icons here */}

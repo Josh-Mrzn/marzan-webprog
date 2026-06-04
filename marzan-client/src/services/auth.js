@@ -4,7 +4,7 @@ export const getCurrentUser = () => {
   if (!token) return null;
   return {
     token,
-    type: localStorage.getItem('type') || 'editor',
+    type: localStorage.getItem('type') || 'viewer',
     firstName: localStorage.getItem('firstName') || 'User',
     lastName: localStorage.getItem('lastName') || '',
     email: localStorage.getItem('email') || '',
@@ -21,4 +21,4 @@ export const clearSession = () => {
 };
 
 export const isAdmin = () => getCurrentUser()?.type === 'admin';
-export const isEditor = () => getCurrentUser()?.type === 'editor';
+export const isViewer = () => getCurrentUser()?.type === 'viewer';

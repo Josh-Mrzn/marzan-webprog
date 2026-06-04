@@ -20,7 +20,7 @@ const initialForm = {
   username: '',
   password: '',
   address: '',
-  type: 'editor',
+  type: 'viewer',
 };
 
 const SignUpPage = () => {
@@ -239,7 +239,7 @@ const SignUpPage = () => {
               onChange={handleChange}
               className={selectClasses}
             >
-              <option value="editor">Editor</option>
+              <option value="admin">Admin</option>
               <option value="viewer">Viewer</option>
             </select>
           </div>

@@ -12,6 +12,7 @@ const SignInPage = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [accountType, setAccountType] = useState('viewer');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -29,7 +30,8 @@ const SignInPage = () => {
       localStorage.setItem('type', data.type);
       localStorage.setItem('email', data.email || email);
 
-      navigate('/dashboard', {
+      const destination = accountType === 'viewer' ? '/' : '/dashboard';
+      navigate(destination, {
         replace: true,
         state: { firstName: data.firstName, type: data.type },
       });
@@ -47,7 +49,7 @@ const SignInPage = () => {
     <>
       <h1 className="text-3xl font-bold tracking-tight text-zinc-900 sm:text-4xl">Log In</h1>
       <p className="mt-3 text-sm leading-6 text-zinc-600">
-        Welcome back. Sign in with your admin or editor account to access the dashboard.
+        Welcome back. Sign in to your account to continue.
       </p>
 
       {error && (
@@ -90,6 +92,21 @@ const SignInPage = () => {
           <p className="mt-2 text-xs leading-5 text-zinc-500">
             It must be a combination of minimum 8 letters, numbers, and symbols.
           </p>
+        </div>
+
+        <div>
+          <label htmlFor="signin-account-type" className="text-sm font-medium text-zinc-700">
+            Account type
+          </label>
+          <select
+            id="signin-account-type"
+            value={accountType}
+            onChange={(e) => setAccountType(e.target.value)}
+            className={inputClasses}
+          >
+            <option value="viewer">Viewer</option>
+            <option value="admin">Admin</option>
+          </select>
         </div>
 
         <div className="flex items-center justify-between gap-4 text-sm">

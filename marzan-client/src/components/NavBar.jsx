@@ -23,8 +23,8 @@ const NavBar = () => {
         
         {/* Logo Section */}
         <NavLink to="/" className="flex items-center gap-3">
-          <img src={logo} alt="Centaim Logo" className="h-10 w-auto" />
-          <span className="text-xl font-bold text-zinc-900 tracking-tighter">Centaim</span>
+          <img src={logo} alt="GoodDawgs Logo" className="h-10 w-auto" />
+          <span className="text-xl font-bold text-zinc-900 tracking-tighter">GoodDawgs</span>
         </NavLink>
 
         {/* Main Navigation */}

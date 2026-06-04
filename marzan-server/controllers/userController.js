@@ -99,13 +99,6 @@ const loginUser = async (req, res) => {
         .json({ message: 'Your account is inactive. Please contact support.' });
     }
 
-    // Enhancement 1: viewers cannot log in.
-    if (user.type === 'viewer') {
-      return res
-        .status(403)
-        .json({ message: 'Viewers are not allowed to sign in to the dashboard.' });
-    }
-
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: 'Invalid credentials' });

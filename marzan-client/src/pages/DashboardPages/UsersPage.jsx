@@ -44,7 +44,7 @@ import {
   updateUser as updateUserApi,
 } from '../../services/UserService';
 
-const TYPES = ['admin', 'editor', 'viewer'];
+const TYPES = ['admin', 'viewer'];
 const GENDERS = ['male', 'female', 'other'];
 const AVATAR_COLORS = [
   '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
@@ -63,7 +63,6 @@ const labelize = (value) =>
 
 const typeChipColor = {
   admin: { bg: '#eff6ff', color: '#3b82f6' },
-  editor: { bg: '#f5f3ff', color: '#8b5cf6' },
   viewer: { bg: '#f1f5f9', color: '#64748b' },
 };
 
@@ -74,7 +73,7 @@ const blankForm = {
   gender: '',
   contactNumber: '',
   email: '',
-  type: 'editor',
+  type: 'viewer',
   username: '',
   password: '',
   address: '',
